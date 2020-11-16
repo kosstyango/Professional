@@ -1,7 +1,6 @@
 public class Main {
     public static int min(int a, int b, int c) {
-        if (a < b)
-            if (b < c)
+        if (a < b)&&(b < c)
                 return a;
             else 
                 if (a < c)
