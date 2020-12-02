@@ -1,0 +1,73 @@
+package server;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+
+public class server {
+    public static void main(String[] args) {
+        ArrayList<User> clients = new ArrayList<>(); //создём список пользователей
+        Socket socket = null;
+        try {ServerSocket serverSocket = new ServerSocket(10000);
+            System.out.println("Сервер работает");
+            while (true){
+                socket = serverSocket.accept(); //устанавливаем соединение с клиентом
+                DataOutputStream out = new DataOutputStream(socket.getOutputStream()); //создаем поток сообщения клиенту
+                out.writeUTF("Представьтесь в чате, пожалуйста"); //запрашиваем имя клиента
+                DataInputStream in = new DataInputStream(socket.getInputStream()); //создаем поток приёма от клиента
+                String name = in.readUTF(); //принимаем имя клиента
+                out.writeUTF(name+", добро пожаловать в чат!");
+                User user = new User(socket, name); //создаём объект пользователя с персональным сокетом и именем
+                clients.add (user); // добавляем пользователя в список пользователей
+                user.sendMsg(clients, "пользователь: "+name+" подключился", "СЕРВЕР");
+                Thread thread = new Thread(new Runnable(){
+                    @Override
+                    public void run(){
+                        try {
+                            while (true) {
+                            String request = null;
+                            System.out.println("Ожидаем сообщения от "+name); //выводим на экран сервера приглашение
+                                request = in.readUTF(); //получаем сообщение от пользователя
+                                System.out.println(name + " прислал(а): " + request); // выводим на экран сервера сообщение
+                                user.sendMsg(clients, request, name); //рассылаем сообщение от пользователя всем пользователям
+                            }
+                        }catch (IOException e) {
+                            e.printStackTrace();
+                        } }});
+                thread.start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+class User {
+    private Socket socket;
+    private String name;
+
+    User(Socket socket, String name) {
+        this.socket = socket;
+        this.name = name;
+    }
+
+    public Socket getSocket() {
+        return this.socket;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public void sendMsg(ArrayList<User> clients, String request, String name){
+        for (User client:clients){ //перебираем список пользователей
+            DataOutputStream out = null;
+        try{ if (client.getName().equals(this.name)) continue; // пропускаем в рассылке автора сообщения
+            out = new DataOutputStream(client.getSocket().getOutputStream());
+            out.writeUTF(name + " отправил(а) сообщение: " + request);}
+        catch (IOException exception){
+            exception.printStackTrace();}
+        }
+    }
+}
