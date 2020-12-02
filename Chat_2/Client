@@ -1,0 +1,38 @@
+package client;
+
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.Scanner;
+
+public class Client {
+    public static void main(String[] args) {
+        try { Socket socket = new Socket("localhost", 10000);
+            DataInputStream in = new DataInputStream(socket.getInputStream());
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+
+            Thread thread = new Thread(new Runnable(){
+                @Override
+                public void run() {
+                    try{
+                        while (true){
+                            String responce = in.readUTF();
+                            System.out.println(responce);
+                        } } catch(IOException e){
+                        e.printStackTrace();}
+                    }});
+            thread.start();
+            Scanner s = new Scanner(System.in); //открываем Сканер для приема данных с клавиатуры
+            while(true){
+                String msg = s.nextLine(); //считываем строку с клавиатуры
+                out.writeUTF(msg); //отправляем в формате UTF
+            }
+        } catch (UnknownHostException unknownHostException) {
+            unknownHostException.printStackTrace();
+        } catch (IOException ioException) {
+            ioException.printStackTrace();}
+        }
+    }
